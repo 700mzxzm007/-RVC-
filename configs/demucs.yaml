@@ -1,0 +1,19 @@
+audio:
+  sample_rate: 44100
+  mono: true
+
+separation:
+  backend: demucs
+  model: htdemucs
+  device: null
+  shifts: 1
+  overlap: 0.25
+
+features:
+  f0_method: pyin
+  hop_length: 512
+
+conversion:
+  backend: identity
+  model_path: null
+  target_speaker: demo
