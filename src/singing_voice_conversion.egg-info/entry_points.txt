@@ -1,0 +1,3 @@
+[console_scripts]
+svc-convert = svc_pipeline.cli:app
+svc-dataset = svc_pipeline.dataset_cli:app

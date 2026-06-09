@@ -1,0 +1,80 @@
+# Singing Voice Conversion
+
+一个面向授权声线的歌声转换工程骨架。MVP 流程是：
+
+1. 输入已有演唱音频。
+2. 分离或读取干声。
+3. 提取音高、节奏、内容特征。
+4. 使用 voice conversion 后端把音色转换为目标声线。
+5. 输出转换后的人声，后续可再与伴奏混音。
+
+> 请只使用你本人或已获得明确授权的目标声线与歌曲素材。
+
+## 快速开始
+
+```bash
+cd /Users/mzx/PycharmProjects/singing-voice-conversion
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+svc-convert examples/input.wav outputs/converted.wav --target-speaker demo
+svc-convert examples/input.mp3 outputs/clip.wav --start 60 --duration 20
+svc-convert examples/input.mp3 outputs/converted.wav --vocal-output outputs/vocals.wav
+svc-convert examples/input.mp3 outputs/converted.wav --config configs/demucs.yaml --vocal-output outputs/vocals.wav
+```
+
+当前默认 `identity` 后端会保留原音频，只把 pipeline 跑通。接入真实模型时，实现
+`VoiceConversionBackend`，然后在配置里切换后端。
+
+## 目录
+
+```text
+src/svc_pipeline/
+  audio.py          音频读写和重采样
+  cli.py            命令行入口
+  config.py         配置模型
+  features.py       音高/内容特征提取
+  pipeline.py       主流程编排
+  separation.py     人声分离接口
+  vc_backend.py     声线转换后端接口
+configs/default.yaml
+tests/
+```
+
+## 后续接入建议
+
+- 人声分离：Demucs 或 UVR。
+- F0 提取：CREPE、RMVPE、Parselmouth 或 librosa pyin。
+- 内容特征：HuBERT / ContentVec。
+- 转换模型：RVC、so-vits-svc、Diff-SVC 或自训练后端。
+- Web Demo：安装 `.[app]` 后增加 Gradio 页面。
+
+## 授权声线数据准备
+
+```bash
+svc-dataset scan data_authorized/
+svc-dataset prepare data_authorized/ datasets/rvc_ready --speaker target --max-duration 12
+```
+
+如果输入是完整混音，并且你确认素材已授权，可以先跑配置里的人声分离再切片：
+
+```bash
+svc-dataset prepare data_authorized/ datasets/rvc_ready \
+  --speaker target \
+  --config configs/demucs.yaml \
+  --separate-vocals
+```
+
+输出结构：
+
+```text
+datasets/rvc_ready/target/
+  wavs/
+  metadata.csv
+```
+
+过滤太安静或异常片段：
+
+```bash
+svc-dataset filter datasets/rvc_ready/target datasets/rvc_ready/target_clean --min-rms 0.005
+```
